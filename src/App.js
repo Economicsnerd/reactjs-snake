@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import Snake from './Snake';
-import Food from './Food';
+import Target from './Target';
 
-// Sets random coordinates within the canvas for snake food
+// Sets random coordinates within the canvas for snake target
 
 const getRandmonCoordinates = () => {
   let min = 1;
@@ -12,11 +12,11 @@ const getRandmonCoordinates = () => {
   return [x, y];
 };
 
-// The state of our snake && food
-// Direction and random coordinates of snake food
+// The state of our snake && target
+// Direction and random coordinates of snake target
 
 const initialState = {
-  food: getRandmonCoordinates(),
+  target: getRandmonCoordinates(),
   speed: 200,
   direction: 'RIGHT',
   snakeDots: [
@@ -30,12 +30,18 @@ class App extends Component {
 
   componentDidMount() {
     setInterval(this.snakeMovement, this.state.speed);
-    document.onkeypress = this.onKeyPress;
+    document.onkeydown = this.onKeyDown;
+  }
+
+  componentDidUpdate() {
+    this.outOfBounds();
+    this.hitWall();
+    this.checkTarget();
   }
 
   // When user clicks on a key this will store the direction of the snake on our state
 
-  onKeyPress = (e) => {
+  onKeyDown = (e) => {
     e = e || window.event;
     switch (e.keyCode) {
       case 38:
@@ -86,11 +92,75 @@ class App extends Component {
     });
   };
 
+  // Check if snake is out of bounds
+
+  outOfBounds() {
+    let head = this.state.snakeDots[this.state.snakeDots.length - 1];
+    if (head[0] >= 100 || head[1] >= 100 || head[0] < 0 || head[1] < 0) {
+      this.gameOver();
+    }
+  }
+
+  // Check if snake has hit the wall
+
+  hitWall() {
+    let snake = [...this.state.snakeDots];
+    let head = snake[snake.length - 1];
+
+    // Removes the last array element i.e. the snake's head
+    snake.pop();
+
+    snake.forEach((dot) => {
+      if (head[0] === dot[0] && head[1] === dot[1]) {
+        this.gameOver();
+      }
+    });
+  }
+
+  // Check if the snake hit its target
+
+  checkTarget() {
+    let head = this.state.snakeDots[this.state.snakeDots.length - 1];
+    let target = this.state.target;
+    if (head[0] === target[0] && head[1] === target[1]) {
+      this.setState({
+        target: getRandmonCoordinates(),
+      });
+      this.growSnake();
+      this.accelerate();
+    }
+  }
+
+  growSnake() {
+    let newSnake = [...this.state.snakeDots];
+    newSnake.unshift([]);
+    this.setState({
+      snakeDots: newSnake,
+    });
+  }
+
+  accelerate() {
+    if (this.state.speed > 10) {
+      this.setState({
+        speed: this.state.speed - 10,
+      });
+    }
+  }
+
+  // What happens on Game Over
+
+  gameOver() {
+    alert(`Game Over. You score is ${this.state.snakeDots.length}`);
+    // Reset Game
+    this.setState(initialState);
+  }
+
+  // Creates Game Area, Snake and target(target)
   render() {
     return (
       <div className="game-area">
         <Snake snakeDots={this.state.snakeDots} />
-        <Food dot={this.state.food} />
+        <Target dot={this.state.target} />
       </div>
     );
   }
